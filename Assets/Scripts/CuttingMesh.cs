@@ -6,8 +6,8 @@ public class Slice
 {
     public List<Vector3> objPosList;
     public List<int> objTriList;
-    public List<Vector3> capPosList;
-    public List<int> capTriList;
+    public List<Vector3> covPosList;
+    public List<int> covTriList;
     public List<Vector3> posList;
     public List<int> triList;
     public Vector3 position;
@@ -17,11 +17,18 @@ public class Slice
     {
         objPosList = new List<Vector3>();
         objTriList = new List<int>();
-        capPosList = new List<Vector3>();
-        capTriList = new List<int>();
+        covPosList = new List<Vector3>();
+        covTriList = new List<int>();
         posList = new List<Vector3>();
         triList = new List<int>();
     }
+
+    public void ClearPosAndTriLists()
+    {
+        posList.Clear();
+        triList.Clear();
+    }
+
 }
 
 public class CuttingMesh : MonoBehaviour
@@ -47,21 +54,21 @@ public class CuttingMesh : MonoBehaviour
         for (int i = 0; i < slice.Length; i++)
         {
             slice[i] = new Slice();
+            slice[i].Init();
         }
+
         meshPos = transform.position;
         meshScale = transform.localScale;
         meshTriangles = cutMesh.triangles;
         meshVertices = cutMesh.vertices;
         meshNormals = cutMesh.normals;
         int[] triangle = new int[3];
-        var verts = new List<Vector3>();
+        List<Vector3> verts = new List<Vector3>();
 
-        for (var i = 0; i < meshTriangles.Length; i += 3)
+        for (int i = 0; i < meshTriangles.Length; i += 3)
         {
-            slice[0].posList.Clear();
-            slice[0].triList.Clear();
-            slice[1].posList.Clear();
-            slice[1].triList.Clear();
+            for (int j = 0; j < slice.Length; j++)
+                slice[j].ClearPosAndTriLists();
             verts.Clear();
 
             for (int j = 0; j < 3; j++)
@@ -111,12 +118,12 @@ public class CuttingMesh : MonoBehaviour
                 {
                     slice[l].posList.Add(slice[0].position);
                     slice[l].posList.Add(slice[1].position);
-                    slice[l].capPosList.Add(slice[0].position);
-                    slice[l].capPosList.Add(slice[1].position);
+                    slice[l].covPosList.Add(slice[0].position);
+                    slice[l].covPosList.Add(slice[1].position);
                 }
                 if (slice[l].posList.Count > 0)
                 {
-                    List<int> tris1 = CreateTriangles(slice[l].posList, normal);
+                    List<int> tris1 = TrianglesBuilder(slice[l].posList, normal);
                     int triIdx = slice[l].objPosList.Count;
                     slice[l].objPosList.AddRange(slice[l].posList);
                     foreach (var triI in tris1)
@@ -129,14 +136,14 @@ public class CuttingMesh : MonoBehaviour
 
         for (int j = 0; j < slice.Length; j++)
         {
-            Limitation(plane, slice[j].capPosList, slice[j].capTriList, j * (-1));
+            Limitation(plane, slice[j].covPosList, slice[j].covTriList, j * (-1));
         }
 
         for (int l = 0; l < slice.Length; l++)
         {
             int tri1Idx = slice[l].objPosList.Count;
-            slice[l].objPosList.AddRange(slice[l].capPosList);
-            foreach (var idx1 in slice[l].capTriList)
+            slice[l].objPosList.AddRange(slice[l].covPosList);
+            foreach (var idx1 in slice[l].covTriList)
             {
                 slice[l].objTriList.Add(tri1Idx + idx1);
             }
@@ -149,13 +156,14 @@ public class CuttingMesh : MonoBehaviour
         }
         CreateSlice(sliceObMeshes[0]);
         ChangeMeshObj(gameObject, sliceObMeshes[1]);
+        cutMesh = sliceObMeshes[1];
         transform.localScale = Vector3.one;
     }
 
 
-    private List<int> CreateTriangles(List<Vector3> pos, Vector3 normal)
+    private List<int> TrianglesBuilder(List<Vector3> position, Vector3 normal)
     {
-        if (pos.Count >= 3)
+        if (position.Count >= 3)
         {
             List<int> triangles = new List<int>();
             List<int> idx = new List<int>();
@@ -166,14 +174,14 @@ public class CuttingMesh : MonoBehaviour
             Vector3 cross = Vector3.zero;
             float inner = 0.0f;
 
-            for (int i = 0; i < pos.Count; i += 3)
+            for (int i = 0; i < position.Count; i += 3)
             {
                 for (int k = 1; k < 4; k++)
                 {
                     idx[k] = idx[0] + (k - 1);
                 }
 
-                cross = Vector3.Cross(pos[idx[3]] - pos[idx[1]], pos[idx[2]] - pos[idx[1]]);
+                cross = Vector3.Cross(position[idx[3]] - position[idx[1]], position[idx[2]] - position[idx[1]]);
                 inner = Vector3.Dot(cross, normal);
                 if (inner < 0)
                 {

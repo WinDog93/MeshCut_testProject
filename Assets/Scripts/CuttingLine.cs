@@ -2,20 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-
-
 public class CuttingLine : MonoBehaviour
 {
-
-
-    //private LineRenderer line;
     private Vector3 startPoint, endPoint, position;
     Plane _plane;
-
-    private void OnEnable()
-    {
-        //line = GetComponent<LineRenderer>();
-    }
 
     private void MouseBtnDwn()
     {
@@ -29,24 +19,9 @@ public class CuttingLine : MonoBehaviour
         Vector3 endMousePos = Input.mousePosition;
         endMousePos.z = 10.0f;
         endPoint = Camera.main.ScreenToWorldPoint(endMousePos);
-        DrawLine(startPoint, endPoint);
         position = (startPoint + endPoint) / 2;
         _plane = GetPlane(position);
         FindCuttingMesh(_plane);
-        //var cutMesh = FindCutMesh();
-        //if (cutMesh != null)
-        //{
-        //    _cutter.Cut(_plane, cutMesh);
-        //}
-
-    }
-
-    private void DrawLine(Vector3 start, Vector3 end)
-    {
-        //line.enabled = true;
-        //line.SetPositions(new Vector3[] { start, end });
-        //line.SetPosition(0, start);
-        //line.SetPosition(1, end);
     }
 
     private Plane GetPlane(Vector3 pos)
@@ -79,7 +54,6 @@ public class CuttingLine : MonoBehaviour
                 cutMesh.Cut(plane);
             }
         }
-        //return null;
     }
 
     private void Update()
